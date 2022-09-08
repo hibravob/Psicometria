@@ -1,0 +1,183 @@
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+packages <- c("parameters","readxl","apa","haven","ggplot2","ggcorrplot","ggpubr",
+              "gridExtra","apaTables", "reshape", "GPArotation", 
+              "mvtnorm", "psych", "psychometric", "lavaan", "nFactors",
+              "semPlot", "lavaan", "MVN", "semTools","FactoMineR", "factoextra",
+              "polycor","ggcorrplot"
+              )
+ipak(packages)
+
+#Data frame
+
+Basededatos <- read_excel("C:/Users/hecto/Documents/R Studio/AFE/AFE/DFEFA.xlsx")
+View(Basededatos)
+BasededatosTotal <- read_excel("C:/Users/hecto/Documents/R Studio/AFE/AFE/DFEFA.xlsx")
+View(BasededatosTotal)
+
+#Descriptivos de la base de datos
+summary(Basededatos)
+
+# Pruebas de normalidad Shapiro-Wilk y Kolmogorov-Smirnov
+shapiro.test(BasededatosTotal$TOTAL)
+ks.test(BasededatosTotal$TOTAL, pnorm, mean(BasededatosTotal$TOTAL), sd(BasededatosTotal$TOTAL))
+
+# Matriz de correlacion de multiples variables de Spearman 
+cor(Basededatos, method = "spearman")
+
+# Exportar matriz de correlacion en .txt
+MatrizCorrelaccion = cor(Basededatos[,-11], method = "spearman")
+write.table(MatrizCorrelaccion,"Correlaciones de Spearman.txt")
+
+#Analisis factorial 
+
+
+#Calcular la matriz de correlacion policorica
+
+mat_cor <- hetcor(Basededatos[,-11])$correlations #matriz de correlacion policorica
+mat_cor
+
+#Visualizacion de las correlaciones 
+ggcorrplot(mat_cor,type="lower",hc.order = T)
+
+#Test de Esfericidad de Barlett- Indice Kaiser Mayer Olkin
+cortest.bartlett(mat_cor,n=205)->p_esf
+p_esf$p
+KMO(mat_cor)
+
+#Extraccion de factores
+
+modelo1<-fa(mat_cor,
+            nfactors = 3,
+            rotate = "none",
+            fm="uls") # Minimos cuadrados no ponderados
+modelo1
+
+modelo2<-fa(mat_cor,
+            nfactors = 3,
+            rotate = "none",
+            fm="mle") #Maxima verosimilitud 
+modelo2
+
+#Comparando las comunalidades
+sort(modelo1$communality,decreasing = T)->c1
+sort(modelo2$communality,decreasing = T)->c2
+head(cbind(c1,c2))
+
+#Comparacion de las unicidades 
+sort(modelo1$uniquenesses,decreasing = T)->u1
+sort(modelo2$uniquenesses,decreasing = T)->u2
+head(cbind(u1,u2))
+
+#Determinar el numero de factores
+scree(mat_cor)
+fa.parallel(mat_cor,n.obs=205,fa="fa",fm="uls",cor="poly")
+#El analisis paralelo sugiere que el numero de factores = 3 y el numero de componentes = NA 
+
+#Rotacion y grafico
+modelovarimaxULS<-fa(mat_cor,
+           nfactors = 3,
+           rotate = "varimax",
+           fm="uls") # Minimos cuadrados no ponderados
+modelovarimaxULS
+fa.diagram(modelovarimaxULS)
+
+modeloQuartimaxULS<-fa(mat_cor,
+                     nfactors = 2,
+                     rotate = "quartimax",
+                     fm="uls") # Minimos cuadrados no ponderados
+modeloQuartimaxULS
+fa.diagram(modeloQuartimaxULS)
+
+modeloEquamaxULS<-fa(mat_cor,
+                        nfactors = 3,
+                        rotate = "equamax",
+                        fm="uls") # Minimos cuadrados no ponderados
+modeloEquamaxULS
+fa.diagram(modeloEquamaxULS)
+
+modeloObliminULS<-fa(mat_cor,
+                      nfactors = 3,
+                      rotate = "oblimin",
+                      fm="uls") # Minimos cuadrados no ponderados
+modeloObliminULS
+fa.diagram(modeloObliminULS)
+
+modeloULSSinrotar<-fa(mat_cor,
+                     nfactors = 3,
+                     rotate = "none",
+                     fm="uls") # Minimos cuadrados no ponderados
+modeloULSSinrotar
+fa.diagram(modeloULSSinrotar)
+
+modeloULSdosfactores<-fa(mat_cor,
+                      nfactors = 2,
+                      rotate = "equamax",
+                      fm="uls") # Minimos cuadrados no ponderados
+modeloULSdosfactores
+fa.diagram(modeloULSdosfactores)
+
+#Explicaci?n de la matriz factorial en comentarios
+#ULS1 ULS2 ULS3 son los tres factores extra?dos
+#h2 es la comunalidad de la variable
+#u2 es la unicidad de la variable
+#com es el ?ndice de Hoffman de la complejidad de la carga factorial de cada variable
+#Los valores de ULS1 ULS2 ULS3 corresponden a las cargas o saturaciones factoriales para cada factor.
+# Proportion Explained es la proporci?n de varianza explicada para cada uno de los factores. Al multiplicarse por 100, se convierte en el porcentaje de varianza explicada.
+
+
+#Imprimir resumen de la matriz factorial y porcentaje de varianza explicada
+print(modelovarimaxULS$loadings,cut=0)
+
+
+#Analsisi factorial confirmatorio asumiendo 3 factores
+
+#Instalar y cargar paquetes
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+# usage
+packages <-c("parameters","apa","haven","ggplot2","ggpubr","gridExtra","apaTables", "reshape", "GPArotation", "mvtnorm", "psych", "psychometric", "lavaan", "nFactors", "semPlot", "lavaan", "MVN", "semTools")
+ipak(packages)
+
+#Trabajar con la matriz original
+Basededatos
+
+#Especificaci?n del modelo conceptual (primero unidimensional, luego trifactorial)
+
+Unidimensional<-'AUTOEFICACIA =~ IT1 + IT2 + IT3 + IT4 + IT5 + IT6 + IT7 + IT8 + IT9 + IT10 + IT11 + IT12 + IT13 + IT14 +IT15 +IT16 +IT17 +IT18 +IT19 + IT20 + IT21 + IT22 +IT23 + IT24 + IT25 + IT26'
+
+DosFactores<- 'DecisionesyActitud =~ IT1 + IT4 + IT5 + IT6 + IT7 + IT9 + IT10 + IT12 + IT13 + IT14 +IT15 +IT16 +IT17 +IT18 +IT19 + IT20 + IT21 + IT22 +IT23 + IT24 + IT25 + IT26
+ManejoEstres =~ IT3 + IT2 + IT8'
+
+Tresfactores<-'ActitudPositiva =~ IT1 + IT4 + IT5 + IT6 + IT7 + IT12 + IT13 + IT14 +IT15 +IT16 +IT17 +IT18 +IT19 + IT20 + IT21 + IT22 +IT23 + IT24 + IT25 + IT26
+ManejoEstres =~ IT2 + IT3 + IT8 
+TomaDecisiones =~ IT9 + IT10 + IT11'
+
+#An?lisis Factorial Confirmatorio para 1 dimension
+CFAone <- cfa(Unidimensional,orthogonal=TRUE, data=Basededatos, estimator="ULS")
+summary(CFAone, fit.measures=TRUE)
+
+#An?lisis Factorial Confirmatorio para 3 dimensiones
+CFAtres <- cfa(Tresfactores,orthogonal=TRUE, data=Basededatos, estimator="ULS")
+summary(CFAtres, fit.measures=TRUE)
+
+#An?lisis Factorial Confirmatorio para 2 dimensiones
+CFAdos <- cfa(DosFactores,orthogonal=TRUE, data=Basededatos, estimator="ULS")
+summary(CFAdos, fit.measures=TRUE)
+
+#Medidas de ajuste
+fitMeasures(CFAone)
+fitMeasures(CFAtres)
+fitMeasures(CFAdos)
+semPaths(CFAthreerele, intercepts = FALSE,edge.label.cex=1.5, optimizeLatRes = TRUE, groups = "lat",pastel = TRUE, exoVar = FALSE, sizeInt=5,edge.color ="black",esize = 6, label.prop=2,sizeLat = 6,"std", layout="circle2")
+
+#CONCLUSI?N: El modelo de uno y dos factores presentan un ajuste moderado, el de tres factores no tiene ajuste. 
