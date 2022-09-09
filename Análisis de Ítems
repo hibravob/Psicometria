@@ -1,0 +1,32 @@
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Paquetes para psicometría
+packages <- c("sjPlot","sjmisc","sjlabelled","dplyr","readxl","plyr","openxlsx","ggplot2","reshape", "psych", "psychometric","psycho")
+ipak(packages)
+
+#Dataframe
+
+Items<-read.xlsx("C:/Users/hecto/Documents/R Studio/Analisis de items/Preguntas.xlsx")
+Items$ID <- NULL #Borrar columna ID
+
+#Dificultad
+
+item.exam(Items, y = NULL, discrim = FALSE)
+
+#Discriminacion
+tab_itemscale(Items,show.shapiro = TRUE,show.kurtosis = TRUE)
+
+#Guardar analisis
+Analisis<-tab_itemscale(Items)
+
+#Crear dataframe
+names(Analisis)<- c("Item","Perdidos","Media","DS","Asimetria","Dificultad","Discriminación","Alfa si se elimina")
+Analityc<-rbind(Analisis)
+
+#Pasar a excel
+write.xlsx(Analityc, "Analityc.xlsx", colNames=TRUE)
