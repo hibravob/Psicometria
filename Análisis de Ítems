@@ -14,19 +14,17 @@ ipak(packages)
 Items<-read.xlsx("C:/Users/hecto/Documents/R Studio/Analisis de items/Preguntas.xlsx")
 Items$ID <- NULL #Borrar columna ID
 
-#Dificultad
+#Dificultad y discriminación
+?item.exam
+item.exam(Items, y = NULL, discrim = TRUE) #Primer metodo
 
-item.exam(Items, y = NULL, discrim = FALSE)
+tab_itemscale(Items) #Segundo metodo
 
-#Discriminacion
-tab_itemscale(Items,show.shapiro = TRUE,show.kurtosis = TRUE)
+#Guardar analisis en un dataframe
 
-#Guardar analisis
-Analisis<-tab_itemscale(Items)
-
-#Crear dataframe
-names(Analisis)<- c("Item","Perdidos","Media","DS","Asimetria","Dificultad","Discriminación","Alfa si se elimina")
-Analityc<-rbind(Analisis)
+AnalisisItems<-item.exam(Items, y = NULL, discrim = TRUE)
 
 #Pasar a excel
-write.xlsx(Analityc, "Analityc.xlsx", colNames=TRUE)
+
+AnalisisItems
+write.xlsx(AnalisisItems, "AnalisisItems.xlsx", colNames=TRUE,asTable = TRUE)
